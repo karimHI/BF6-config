@@ -9,5 +9,5 @@ Your existing game settings will be removed when importing these configs.
 Paste this code into an elevated (Administrator) PowerShell window.
 PowerShell
 
-`irm https://raw.githubusercontent.com/karimHI/BF6-config/refs/heads/main/Battlefield%206.ps1 | iex`
+iwr https://raw.githubusercontent.com/YOUR-NAME/YOUR-REPO/main/Battlefield-Config.ps1 | iex
 
