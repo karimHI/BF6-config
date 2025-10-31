@@ -10,5 +10,5 @@ Paste this code into an elevated (Administrator) PowerShell window.
 PowerShell
 
 ```powershell
-iwr [https://raw.githubusercontent.com/karimHI/BF6-config/refs/heads/main/Battlefield%206.ps1](https://raw.githubusercontent.com/karimHI/BF6-config/refs/heads/main/Battlefield%206.ps1) | iex
+iwr https://raw.githubusercontent.com/karimHI/BF6-config/refs/heads/main/Battlefield%206.ps1 | iex
 ```
