@@ -1,7 +1,7 @@
 If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator"))
 {
-    Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
-    Exit
+    Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
+    Exit
 }
 
 $Host.UI.RawUI.WindowTitle = "Battlefield 6 user.cfg Creator (Administrator)"
@@ -50,62 +50,51 @@ Write-Host "Searching for Battlefield 6 installation directory..." -ForegroundCo
 
 $gameName = "Battlefield 6"
 $regPaths = @(
-    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
-    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
 )
-$defaultSteamPath = "C:\Program Files\Steam\steamapps\common\Battlefield 6"
+
 $installPath = $null
 
-# 1. Try finding via registry
 foreach ($path in $regPaths) {
-    $installPath = (Get-ItemProperty -Path $path -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $gameName -and $_.InstallLocation }).InstallLocation
-    if ($installPath) { break }
+    $installPath = (Get-ItemProperty -Path $path -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $gameName -and $_.InstallLocation }).InstallLocation
+    if ($installPath) { break }
 }
 
-# 2. If registry fails, check default Steam path
 if (!$installPath -or !(Test-Path $installPath)) {
-    Write-Host "Could not find in registry. Checking default Steam location..." -ForegroundColor Gray
-    if (Test-Path $defaultSteamPath) {
-        $installPath = $defaultSteamPath
-    }
-}
-
-# 3. If both auto-detections fail, ask manually
-if (!$installPath -or !(Test-Path $installPath)) {
-    Write-Host ""
-    Write-Host "Could not automatically find the '$gameName' directory." -ForegroundColor Red
-    Write-Host "Please paste the full path to your game's installation folder."
-    Write-Host "(e.g., $defaultSteamPath)"
-    Write-Host ""
-    $installPath = Read-Host -Prompt "Game Path"
-    
-    if (!$installPath -or !(Test-Path $installPath)) {
-        Write-Host ""
-        Write-Host "Invalid path. Exiting." -ForegroundColor Red
-        Start-Sleep -Seconds 3
-        Exit
-    }
+    Write-Host ""
+    Write-Host "Could not automatically find the '$gameName' directory." -ForegroundColor Red
+    Write-Host "Please paste the full path to your game's installation folder."
+    Write-Host "(e.g., C:\Program Files\Steam\steamapps\common\Battlefield 6)"
+    Write-Host ""
+    $installPath = Read-Host -Prompt "Game Path"
+    
+    if (!$installPath -or !(Test-Path $installPath)) {
+        Write-Host ""
+        Write-Host "Invalid path. Exiting." -ForegroundColor Red
+        Start-Sleep -Seconds 3
+        Exit
+    }
 }
 
 $cfgFilePath = Join-Path $installPath "user.cfg"
 
 try {
-    Write-Host ""
-    Write-Host "Game found at: $installPath" -ForegroundColor Cyan
-    Write-Host "Creating file: $cfgFilePath" -ForegroundColor Cyan
-    
-    Set-Content -Path $cfgFilePath -Value $cfgContent -Encoding Ascii -Force
-    
-    Write-Host ""
-    Write-Host "Successfully created user.cfg with your settings!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Game found at: $installPath" -ForegroundColor Cyan
+    Write-Host "Creating file: $cfgFilePath" -ForegroundColor Cyan
+    
+    Set-Content -Path $cfgFilePath -Value $cfgContent -Encoding Ascii -Force
+    
+    Write-Host ""
+    Write-Host "Successfully created user.cfg with your settings!" -ForegroundColor Green
 } catch {
-    Write-Host ""
-    Write-Host "An error occurred while writing the file:" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host ""
+    Write-Host "An error occurred while writing the file:" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
 }
 
 Write-Host ""
 Write-Host "Press any key to exit..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-
 Exit
