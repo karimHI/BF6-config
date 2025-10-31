@@ -111,7 +111,7 @@ if (!$installPath) {
         # Check if the provided path is valid (contains bf6.exe)
         if (Test-Path (Join-Path $manualPath $exeName)) {
             $installPath = $manualPath
-            Write-Host "Manual path accepted." -ForegroundColor Green
+  T         Write-Host "Manual path accepted." -ForegroundColor Green
             break
         } else {
             Write-Host "Error: '$exeName' not found in that folder. Try again." -ForegroundColor Red
@@ -128,7 +128,7 @@ try {
     Write-Host "Creating file: $cfgFilePath" -ForegroundColor Cyan
     
     Set-Content -Path $cfgFilePath -Value $cfgContent -Encoding Ascii -Force
-img   
+    
     Write-Host ""
     Write-Host "Successfully created user.cfg with your settings!" -ForegroundColor Green
 } catch {
