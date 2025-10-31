@@ -1,6 +1,5 @@
 If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator"))
 {
-    Write-Host "Administrator access required. Relaunching..." -ForegroundColor Yellow
     Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
     Exit
 }
@@ -11,7 +10,6 @@ $Host.PrivateData.ProgressBackgroundColor = "Black"
 $Host.PrivateData.ProgressForegroundColor = "White"
 Clear-Host
 
-# --- Config Content ---
 $cfgContent = @"
 PerfOverlay.DrawFps 1
 GameTime.MaxVariableFps 0
@@ -48,78 +46,47 @@ RenderDevice.AllowDynamicResolution 0
 RenderDevice.VRamUseForStreamingEnable 1
 "@
 
-# --- Improved Game Detection ---
+Write-Host "Searching for Battlefield 6 installation directory..." -ForegroundColor Yellow
 
 $gameName = "Battlefield 6"
-$exeName = "bf6.exe"
-$installPath = $null
-
-Write-Host "Searching for $gameName ($exeName)..." -ForegroundColor Yellow
-
-# Method 1: Search Registry (Flexible Match)
-Write-Host "Checking registry..." -ForegroundColor Gray
 $regPaths = @(
     "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
     "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
 )
-$regEntries = Get-ItemProperty -Path $regPaths -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*$gameName*" -and $_.InstallLocation }
+$defaultSteamPath = "C:\Program Files\Steam\steamapps\common\Battlefield 6"
+$installPath = $null
 
-foreach ($entry in $regEntries) {
-    $potentialPath = $entry.InstallLocation
-    if (Test-Path (Join-Path $potentialPath $exeName)) {
-        $installPath = $potentialPath
-        Write-Host "Found via Registry." -ForegroundColor Green
-        break
+# 1. Try finding via registry
+foreach ($path in $regPaths) {
+    $installPath = (Get-ItemProperty -Path $path -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $gameName -and $_.InstallLocation }).InstallLocation
+    if ($installPath) { break }
+}
+
+# 2. If registry fails, check default Steam path
+if (!$installPath -or !(Test-Path $installPath)) {
+    Write-Host "Could not find in registry. Checking default Steam location..." -ForegroundColor Gray
+    if (Test-Path $defaultSteamPath) {
+        $installPath = $defaultSteamPath
     }
 }
 
-# Method 2: Check Common Steam Directories
-if (!$installPath) {
-    Write-Host "Registry search failed. Checking common Steam locations..." -ForegroundColor Gray
-    $defaultSteamPaths = @(
-        "C:\Program Files\Steam\steamapps\common\$gameName",
-        "C:\Program Files (x86)\Steam\steamapps\common\$gameName"
-    )
-    
-    foreach ($path in $defaultSteamPaths) {
-        if (Test-Path (Join-Path $path $exeName)) {
-            $installPath = $path
-            Write-Host "Found in default Steam folder." -ForegroundColor Green
-            break
-        }
-    }
-}
-
-# Method 3: Manual Entry (with validation loop)
-if (!$installPath) {
+# 3. If both auto-detections fail, ask manually
+if (!$installPath -or !(Test-Path $installPath)) {
     Write-Host ""
-    Write-Host "Could not automatically find '$gameName'." -ForegroundColor Red
+    Write-Host "Could not automatically find the '$gameName' directory." -ForegroundColor Red
     Write-Host "Please paste the full path to your game's installation folder."
-    Write-Host "(Press ENTER to quit)"
+    Write-Host "(e.g., $defaultSteamPath)"
     Write-Host ""
+    $installPath = Read-Host -Prompt "Game Path"
     
-    while ($true) {
-        $manualPath = Read-Host -Prompt "Game Path"
-        
-        # Allow user to quit
-        if ([string]::IsNullOrEmpty($manualPath)) {
-            Write-Host "No path provided. Exiting." -ForegroundColor Red
-            Start-Sleep -Seconds 3
-            Exit
-        }
-        
-        # Check if the provided path is valid (contains bf6.exe)
-        if (Test-Path (Join-Path $manualPath $exeName)) {
-            $installPath = $manualPath
-  T         Write-Host "Manual path accepted." -ForegroundColor Green
-            break
-        } else {
-            Write-Host "Error: '$exeName' not found in that folder. Try again." -ForegroundColor Red
-        }
+    if (!$installPath -or !(Test-Path $installPath)) {
+        Write-Host ""
+        Write-Host "Invalid path. Exiting." -ForegroundColor Red
+        Start-Sleep -Seconds 3
+        Exit
     }
 }
 
-# --- File Creation ---
 $cfgFilePath = Join-Path $installPath "user.cfg"
 
 try {
