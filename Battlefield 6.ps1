@@ -49,6 +49,7 @@ RenderDevice.VRamUseForStreamingEnable 1
 Write-Host "Searching for Battlefield 6 installation directory..." -ForegroundColor Yellow
 
 $gameName = "Battlefield 6"
+$exeName = "bf6.exe"
 $regPaths = @(
     "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
     "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
@@ -57,31 +58,43 @@ $defaultSteamPath = "C:\Program Files\Steam\steamapps\common\Battlefield 6"
 $installPath = $null
 
 # 1. Try finding via registry
+Write-Host "Checking registry..." -ForegroundColor Gray
 foreach ($path in $regPaths) {
-    $installPath = (Get-ItemProperty -Path $path -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $gameName -and $_.InstallLocation }).InstallLocation
-    if ($installPath) { break }
+    $potentialPath = (Get-ItemProperty -Path $path -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $gameName -and $_.InstallLocation }).InstallLocation
+    if ($potentialPath) {
+        # Check if bf6.exe exists in this path
+        if (Test-Path (Join-Path $potentialPath $exeName)) {
+            $installPath = $potentialPath
+            Write-Host "Found in registry." -ForegroundColor Gray
+            break 
+        }
+    }
 }
 
 # 2. If registry fails, check default Steam path
-if (!$installPath -or !(Test-Path $installPath)) {
+if (!$installPath) {
     Write-Host "Could not find in registry. Checking default Steam location..." -ForegroundColor Gray
-    if (Test-Path $defaultSteamPath) {
+    if (Test-Path (Join-Path $defaultSteamPath $exeName)) {
         $installPath = $defaultSteamPath
+        Write-Host "Found in default Steam location." -ForegroundColor Gray
     }
 }
 
 # 3. If both auto-detections fail, ask manually
-if (!$installPath -or !(Test-Path $installPath)) {
+if (!$installPath) {
     Write-Host ""
-    Write-Host "Could not automatically find the '$gameName' directory." -ForegroundColor Red
+    Write-Host "Could not automatically find the '$gameName' directory (missing $exeName)." -ForegroundColor Red
     Write-Host "Please paste the full path to your game's installation folder."
     Write-Host "(e.g., $defaultSteamPath)"
     Write-Host ""
-    $installPath = Read-Host -Prompt "Game Path"
+    $manualPath = Read-Host -Prompt "Game Path"
     
-    if (!$installPath -or !(Test-Path $installPath)) {
-        Write-Host ""
-        Write-Host "Invalid path. Exiting." -ForegroundColor Red
+    # Check manual path for bf6.exe
+    if ($manualPath -and (Test-Path (Join-Path $manualPath $exeName))) {
+        $installPath = $manualPath
+    } else {
+m       Write-Host ""
+        Write-Host "Invalid path or '$exeName' not found in that folder. Exiting." -ForegroundColor Red
         Start-Sleep -Seconds 3
         Exit
     }
