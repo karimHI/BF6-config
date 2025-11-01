@@ -7,13 +7,13 @@ If (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 }
 
 # 2. Console Setup
-$Host.UI.RawUI.WindowTitle = "Battlefield 6 user.cfg Creator (Administrator)"
+$Host.UI.RawUI.WindowTitle = "Battlefield user.cfg Creator (Administrator)"
 $Host.UI.RawUI.BackgroundColor = "Black"
 $Host.PrivateData.ProgressBackgroundColor = "Black"
 $Host.PrivateData.ProgressForegroundColor = "White"
 Clear-Host
 
-# 3. --- NEW: Ask for Core Count ---
+# 3. Ask for Core Count
 Write-Host "Please enter the number of PHYSICAL cores your CPU has (e.g., 6, 8, 12):" -ForegroundColor Cyan
 $CoreCountInput = Read-Host -Prompt "Number of Cores (X)"
 
@@ -25,7 +25,7 @@ if ($CoreCountInput -notmatch "^\d+$" -or [int]$CoreCountInput -le 0) {
     Exit
 }
 
-# 4. --- NEW: Set X and Y Variables ---
+# 4. Set X and Y Variables
 $CoreCount = [int]$CoreCountInput   # This is your X
 $ThreadCount = $CoreCount * 2       # This is your Y (X * 2)
 
@@ -35,42 +35,13 @@ Start-Sleep -Seconds 2
 Clear-Host
 
 # 5. --- UPDATED: Config File Content ---
-# The variables $CoreCount and $ThreadCount will be inserted into this text
+# This now ONLY contains the thread settings you specified.
 $cfgContent = @"
-PerfOverlay.DrawFps 1
-GameTime.MaxVariableFps 0
-RenderDevice.VSyncEnable 0
-RenderDevice.TripleBufferingEnable 0
-RenderDevice.RenderAheadLimit 1
-RenderDevice.ForceRenderAheadLimit 1
-RenderDevice.RawInputEnable 1
-PostProcess.Quality 0
-WorldRender.MeshQuality 0
-WorldRender.EffectQuality 0
-WorldRender.TerrainQuality 0
-WorldRender.UndergrowthQuality 0
-WorldRender.EnlightenEnable 0
-WorldRender.SkyLightEnable 0
-WorldRender.DeferredCsPathEnable 0
-WorldRender.SpotLightShadowmapEnable 0
-WorldRender.SpotLightShadowmapResolution 0
-WorldRender.TransparencyShadowmapsEnable 0
-WorldRender.PlanarReflectionEnable 0
-WorldRender.MotionBlurEnable 0
-PostProcess.DynamicAOEnable 0
-WorldRender.SSAOEnable 0
-WorldRender.FxaaEnable 0
-WorldRender.HdrEnable 0
-WorldRender.TonemapEnable 1
-WorldRender.SunFlareEnable 0
-WorldRender.DofEnable 0
 Thread.ProcessorCount $CoreCount
 Thread.MaxProcessorCount $CoreCount
 Thread.MinFreeProcessorCount $CoreCount
 Thread.JobThreadPriority 0
 Thread.MaxWorkerThreadCount $ThreadCount
-RenderDevice.AllowDynamicResolution 0
-RenderDevice.VRamUseForStreamingEnable 1
 "@
 
 # 6. Find Game Installation Path
@@ -117,7 +88,7 @@ try {
     Set-Content -Path $cfgFilePath -Value $cfgContent -Encoding Ascii -Force
     
     Write-Host ""
-    Write-Host "Successfully created user.cfg with your custom core settings!" -ForegroundColor Green
+    Write-Host "Successfully created user.cfg with your custom thread settings!" -ForegroundColor Green
 } catch {
     Write-Host ""
     Write-Host "An error occurred while writing the file:" -ForegroundColor Red
